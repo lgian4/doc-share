@@ -64,7 +64,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
       const socket = io({
-          transports: ["websocket"],
+        transports: ["websocket"],
       });
       const createDocumentButton = document.getElementById(
         "createDocumentButton"
@@ -100,6 +100,9 @@
       });
       createDocumentButton.addEventListener("click", () => {
         let title = newDocumentInput.value;
+        if (title == "" || !title || documentList.includes(title)) {
+          return;
+        }
         newDocumentInput.value = "";
         socket.emit("newDocuments", { title, text: "" });
         editor.value = "";

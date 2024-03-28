@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Real-time Collaborative Document</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+      #editor {
+        width: 95%;
+        height: 80vh;
+        resize: none;
+        border: 1px solid #ccc;
+        padding: 10px;
+        font-size: 16px;
+        line-height: 1.5;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+      }
+      .a {
+        border: 1px solid #ccc;
+        padding: 10px;
+        font-size: 16px;
+      }
+      #documentSelect {
+        margin-bottom: 10px;
+        margin-right: 40px;
+        width: 10%;
+      }
+      #newDocumentInput {
+        margin-right: 10px;
+      }
+      label {
+        font-size: 20px;
+        line-height: 1.5;
+        color: #3a3a3a;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <label>Document Name:</label>
+      <select id="documentSelect" class="a"></select>
+
+      <input
+        class="a"
+        type="text"
+        id="newDocumentInput"
+        placeholder="New document title"
+      />
+      <button id="createDocumentButton" class="a">New Document</button>
+    </div>
+    <textarea id="editor" placeholder="Start typing..."></textarea>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io({
+          transports: ["websocket"],
+      });
+      const createDocumentButton = document.getElementById(
+        "createDocumentButton"
+      );
+      const newDocumentInput = document.getElementById("newDocumentInput");
+      const editor = document.getElementById("editor");
+      let documentSelect = document.getElementById("documentSelect");
+      socket.on("documentContent", (content) => {
+        if (editor.value !== content.text) {
+          editor.value = content.text;
+        }
+      });
+      let documentList = [];
+
+      socket.on("documentList", (titleList) => {
+        console.log("documentList", titleList);
+        titleList.forEach((title) => {
+          if (!documentList.includes(title)) {
+            const option = new Option(title, title);
+            documentSelect.add(option, undefined);
+            documentList.push(title);
+          }
+        });
+      });
+      editor.addEventListener("input", () => {
+        const title = documentSelect.value;
+        const content = editor.value;
+
+        socket.emit("updateDocument", {
+          title: title,
+          text: content,
+        });
+      });
+      createDocumentButton.addEventListener("click", () => {
+        let title = newDocumentInput.value;
+        newDocumentInput.value = "";
+        socket.emit("newDocuments", { title, text: "" });
+        editor.value = "";
+        documentList.push(title);
+        const option = new Option(title, title);
+        documentSelect.add(option, undefined);
+        document.querySelector(
+          '#documentSelect [value="' + title + '"]'
+        ).selected = true;
+      });
+
+      documentSelect.addEventListener("change", () => {
+        socket.emit("changeDocument", documentSelect.value);
+      });
+    </script>
+  </body>
+</html>
